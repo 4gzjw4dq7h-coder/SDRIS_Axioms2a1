@@ -67,19 +67,19 @@ def simulate_universe_structure(steps, p_fork, p_link):
 def simulate_universe_structure(steps, p_fork, p_link):
     """Generiert das Raum-Zeit-Netzwerk."""
     G = nx.Graph()
-    root = "0"
-    G.add_node(root, layer=0)
-    active_nodes = [root]
+    root = "0"
+    G.add_node(root, layer=0)
+    active_nodes = [root]
     
     for t in range(steps):
-        new_nodes = []
-        for node in active_nodes:
-            if random.random() < p_fork:
-                for i in range(2): 
-                    child = f"{node}.{i}"
-                    G.add_node(child, layer=t+1)
-                    G.add_edge(node, child, type='time')
-                    new_nodes.append(child)
+        new_nodes = []
+        for node in active_nodes:
+           if random.random() < p_fork:
+               for i in range(2): 
+                    child = f"{node}.{i}"
+     G.add_node(child, layer=t+1)
+                    G.add_edge(node, child, type='time')
+                    new_nodes.append(child)
         
         if len(new_nodes) > 0:
             # Optimierung: Sampling nur wenn nötig
