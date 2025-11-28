@@ -4,32 +4,60 @@ import random
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.linalg import eigvals, expm
+import plotly.graph_objects as go
+import plotly.express as px
+from scipy.linalg import expm
 
 # --- KONFIGURATION ---
 st.set_page_config(
-    page_title="SDRIS Framework Simulation", 
+    page_title="SDRIS Framework Simulation Pro", 
     page_icon="🌌",
     layout="wide"
 )
 
-# Custom Style for Scientific Look
-plt.style.use('dark_background')
+# Custom CSS für professionelleren Look
+st.markdown("""
+<style>
+    .stApp { background-color: #0E1117; }
+    h1, h2, h3 { color: #00ccff !important; font-family: 'Helvetica Neue', sans-serif; }
+    .stButton>button { border-radius: 20px; border: 1px solid #00ccff; color: #00ccff; background: transparent; }
+    .stButton>button:hover { background: #00ccff; color: #000; border: 1px solid #00ccff; }
+</style>
+""", unsafe_allow_html=True)
 
-st.title("🌌 SDRIS Theory: Interactive Verification")
+st.title("🌌 SDRIS Theory: Interactive Verification v2.0")
 st.markdown("""
 **Static-Dynamic Recursive Information Space**
-Dieses Dashboard visualisiert die vier Säulen der Theorie. Nutzen Sie die Sidebar, um Parameter zu variieren.
+Dieses Dashboard visualisiert die vier Säulen der Theorie. Optimierte Berechnungskerne und interaktive Graphen.
 """)
 
-# --- RECHENKERNE (Simulation & Logic) ---
+# --- HELPER: PLOTLY CHARTS ---
+def plot_line_chart(x, y, title, xlabel, ylabel, color='#00ccff', trend_y=None):
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=x, y=y, mode='lines', name='Signal', line=dict(color=color, width=2)))
+    
+    if trend_y is not None:
+        fig.add_trace(go.Scatter(x=x, y=trend_y, mode='lines', name='Trend', line=dict(color='white', width=1, dash='dash')))
+
+    fig.update_layout(
+        title=title,
+        xaxis_title=xlabel,
+        yaxis_title=ylabel,
+        template="plotly_dark",
+        margin=dict(l=20, r=20, t=40, b=20),
+        height=400,
+        hovermode="x unified"
+    )
+    return fig
+
+# --- RECHENKERNE (Optimiert) ---
 
 @st.cache_data
 def simulate_universe_structure(steps, p_fork, p_link):
     """Axiom I: Generiert das Raum-Zeit-Netzwerk."""
     G = nx.Graph()
     root = "0"
-    G.add_node(root, active=True, layer=0)
+    G.add_node(root, layer=0)
     active_nodes = [root]
     
     for t in range(steps):
@@ -38,11 +66,12 @@ def simulate_universe_structure(steps, p_fork, p_link):
             if random.random() < p_fork:
                 for i in range(2): 
                     child = f"{node}.{i}"
-                    G.add_node(child, active=True, layer=t+1)
+                    G.add_node(child, layer=t+1)
                     G.add_edge(node, child, type='time')
                     new_nodes.append(child)
         
         if len(new_nodes) > 0:
+            # Optimierung: Sampling nur wenn nötig
             potential = new_nodes if len(new_nodes) < 50 else random.sample(new_nodes, 50)
             for n1 in new_nodes:
                 for n2 in potential:
@@ -54,71 +83,60 @@ def simulate_universe_structure(steps, p_fork, p_link):
     return G
 
 @st.cache_data
-def get_saturation_data(uploaded_file, max_dim_view):
-    """Lädt CSV oder simuliert Sättigung für Axiom II."""
-    if uploaded_file is not None:
-        try:
-            df = pd.read_csv(uploaded_file)
-            return df['Dimension_N'].values, df['Ontological_Tension_Lambda'].values, True
-        except:
-            st.error("Fehler beim Lesen der Sättigungs-CSV.")
-            
-    # Fallback: Simulation
+def get_saturation_data(max_dim_view):
+    """Axiom II: Simulation der dimensionalen Sättigung."""
     dims = []
     lambdas = []
     limit = max(21, max_dim_view)
     
     for d in range(3, limit + 1):
-        # Construct Tilt Matrix
-        mat = np.zeros((d, d), dtype=complex)
+        # Construct Tilt Matrix (Optimized construction)
+        # J ist schiefhermitesch
         idx = np.arange(d - 1)
+        # Wir brauchen nur die Eigenwerte, keine volle Matrix für Plot
+        # Dies simuliert die Matrixstruktur:
+        # H = diag(i, 1) + diag(-i, -1)
+        # Eigenwerte für solche Toeplitz-Matrizen nähern sich 2*cos(...) an
+        
+        # Exakte Berechnung via numpy
+        mat = np.zeros((d, d), dtype=complex)
         mat[idx, idx + 1] = 1j
         mat[idx + 1, idx] = -1j
         
-        # Eigenvalues
-        # Note: eigvals returns complex, we take magnitude of max
-        lambdas.append(np.max(np.abs(eigvals(mat))))
+        # Eigenvalues return complex, take max abs
+        # linalg.eigvals ist schneller als eig
+        lambdas.append(np.max(np.abs(np.linalg.eigvals(mat))))
         dims.append(d)
         
-    return dims, lambdas, False
+    return dims, lambdas
 
 @st.cache_data
 def get_spectral_properties(n_dim):
-    """
-    Axiom II Update: Calculates exact properties for Odd (Flux) vs Even (Stable) regimes.
-    """
-    # Construct Tilt Matrix J
+    """Axiom II Update: Check Stability."""
     J = np.zeros((n_dim, n_dim), dtype=complex)
-    for k in range(n_dim - 1):
-        J[k, k+1] = -1j  # Upper diagonal -i
-        J[k+1, k] = 1j   # Lower diagonal i
+    idx = np.arange(n_dim - 1)
+    J[idx, idx+1] = -1j
+    J[idx+1, idx] = 1j
     
     evals = np.linalg.eigvals(J)
-    # Sort by absolute magnitude
     sorted_evals = np.sort(np.abs(evals))
     max_tension = np.max(sorted_evals)
-    
-    # Check for Zero Mode (Characteristic of Flux Tunnels) 
     has_zero_mode = np.any(np.isclose(sorted_evals, 0.0, atol=1e-5))
     
     return sorted_evals, max_tension, has_zero_mode
 
 @st.cache_data
-def simulate_flux_tunnel_dynamics(n_dim, damping_type, base_rate, steps=30):
-    """
-    Update: Simulates entropy dissipation in Flux Tunnels.
-    Comparing Constant vs Eigenvalue-Dependent Damping.
-    """
-    # 1. Setup Matrix J (Flux Tunnel)
+def simulate_flux_tunnel_dynamics(n_dim, damping_type, base_rate, steps=40):
+    """Axiom IV: Entropic Dynamics."""
+    # Setup Matrix J
     J = np.zeros((n_dim, n_dim), dtype=complex)
-    for k in range(n_dim - 1):
-        J[k, k+1] = -1j
-        J[k+1, k] = 1j
-        
-    # 2. Eigen-decomposition
-    evals, evecs = np.linalg.eigh(J) # Hermitian solver
+    idx = np.arange(n_dim - 1)
+    J[idx, idx+1] = -1j
+    J[idx+1, idx] = 1j
     
-    # 3. Initialize Random State Vector
+    evals, evecs = np.linalg.eigh(J)
+    
+    # Init Random State
     np.random.seed(42)
     psi = np.random.rand(n_dim) + 1j * np.random.rand(n_dim)
     psi = psi / np.linalg.norm(psi)
@@ -129,7 +147,6 @@ def simulate_flux_tunnel_dynamics(n_dim, damping_type, base_rate, steps=30):
     
     # Unitary Propagator
     U = expm(-1j * J * dt)
-    
     current_psi = psi.copy()
     
     for t in range(steps + 1):
@@ -137,84 +154,80 @@ def simulate_flux_tunnel_dynamics(n_dim, damping_type, base_rate, steps=30):
         norms.append(norm)
         t_vals.append(t * dt)
         
-        # A. Unitary Step (Time Evolution)
+        # A. Unitary Step
         current_psi = U @ current_psi
         
-        # B. Damping Step (Non-Unitary Entropy)
+        # B. Damping Step
         if damping_type == 'Constant':
-            # Uniform decay
             decay = np.exp(-base_rate * dt)
             current_psi = current_psi * decay
-            
         elif damping_type == 'Eigen-Dependent':
-            # Mode-specific decay: exp(-base * |lambda| * dt)
-            # Project onto basis
+            # Project -> Decay -> Reconstruct
             coeffs = evecs.conj().T @ current_psi
             decay_factors = np.exp(-base_rate * np.abs(evals) * dt)
             coeffs = coeffs * decay_factors
-            # Reconstruct
             current_psi = evecs @ coeffs
             
-    return t_vals, norms, evals
+    return t_vals, norms
 
 @st.cache_data
-def get_vacuum_spectrum(uploaded_file, num_primes, f_max):
-    """Axiom III: Lädt CSV oder simuliert holographisches Rauschen."""
-    if uploaded_file is not None:
-        try:
-            df = pd.read_csv(uploaded_file)
-            return df['Frequency_Holographic'].values, df['Power_Spectral_Density'].values, True
-        except:
-            st.error("Fehler beim Lesen der Noise-CSV.")
-
-    # Fallback: Simulation using Primes
-    limit = int(num_primes * 15)
-    is_prime = [True] * limit
-    primes = []
-    for p in range(2, limit):
-        if is_prime[p]:
-            primes.append(p)
-            for i in range(p*p, limit, p): is_prime[i] = False
-            if len(primes) >= num_primes: break
+def get_vacuum_spectrum_optimized(num_primes, f_max):
+    """Axiom III: Vektorisierte Berechnung (High Performance)."""
+    # 1. Primzahlen generieren (Sieb des Eratosthenes)
+    limit = int(num_primes * 15) # Schätzung für Obergrenze
+    is_prime = np.ones(limit, dtype=bool)
+    is_prime[:2] = False
+    for i in range(2, int(limit**0.5) + 1):
+        if is_prime[i]:
+            is_prime[i*i:limit:i] = False
     
+    primes = np.nonzero(is_prime)[0][:num_primes]
+    
+    # 2. Vektorisierte Guinand-Weil Summe
+    # Wir nutzen Broadcasting: Frequencies (N, 1) x Primes (1, M)
     freqs = np.linspace(0.1, f_max, 1000)
-    psd = []
-    for f in freqs:
-        amp = 0
-        for p in primes:
-            # Guinand-Weil inspired summation
-            term = (np.log(p)/np.sqrt(p)) * np.cos(2*np.pi*f*np.log(p))
-            amp += term
-        psd.append((1/f) * amp**2)
-        
-    return freqs, psd, False
+    
+    # P_array shape: (1, num_primes)
+    p_arr = primes.reshape(1, -1)
+    # F_array shape: (num_freqs, 1)
+    f_arr = freqs.reshape(-1, 1)
+    
+    # Vorberechnungen
+    log_p = np.log(p_arr)
+    inv_sqrt_p = 1.0 / np.sqrt(p_arr)
+    
+    # Der Term: sum( (log p / sqrt p) * cos(2*pi*f*log p) )
+    # Argument für Cosinus:
+    args = 2 * np.pi * f_arr * log_p
+    cos_terms = np.cos(args)
+    
+    # Gewichtung
+    weighted_cos = cos_terms * (log_p * inv_sqrt_p)
+    
+    # Summe über alle Primzahlen (Achse 1)
+    amplitudes = np.sum(weighted_cos, axis=1)
+    
+    # PSD Berechnung
+    psd = (1/freqs) * (amplitudes**2)
+    
+    return freqs, psd
 
 # --- SIDEBAR ---
-st.sidebar.header("🎛️ Steuerung & Daten")
+st.sidebar.header("🎛️ SDRIS Control Center")
 
-# File Uploader
-st.sidebar.subheader("📂 Daten Upload (Optional)")
-sat_file = st.sidebar.file_uploader("Sättigungs-Daten (.csv)", type="csv")
-noise_file = st.sidebar.file_uploader("Vakuum-Spektrum (.csv)", type="csv")
+with st.sidebar.expander("1. Geometrie Parameter", expanded=True):
+    p_fork = st.slider("Zeit-Expansion (Fork)", 0.5, 1.0, 0.90)
+    p_link = st.slider("Raum-Dichte (Link)", 0.01, 0.5, 0.15)
+    steps_geo = st.slider("Simulation Steps", 5, 9, 7)
 
-st.sidebar.markdown("---")
-st.sidebar.subheader("Simulation Parameter")
+with st.sidebar.expander("2. Sättigung & Entropie"):
+    max_dim_view = st.slider("Max Dimension View", 21, 100, 40)
+    sim_dim = st.selectbox("Flux Tunnel Größe", [5, 7, 13, 17, 19, 21, 31], index=1)
+    base_rate_input = st.slider("Dämpfungs-Rate", 0.01, 0.5, 0.08)
 
-# 1. Geometry
-p_fork = st.sidebar.slider("Geometrie: Zeit-Expansion", 0.5, 1.0, 0.90)
-p_link = st.sidebar.slider("Geometrie: Raum-Dichte", 0.01, 0.5, 0.15)
-
-# 2. Saturation
-max_dim_view = st.sidebar.slider("Sättigung: Max Dimension", 21, 60, 30)
-
-# 3. Entropy
-sim_dim = st.sidebar.selectbox("Entropie: Flux Tunnel Größe", [5, 7, 13, 17, 19, 21], index=1)
-base_rate_input = st.sidebar.slider("Entropie: Dämpfungs-Rate", 0.01, 0.5, 0.05)
-
-# 4. Holometer
-num_primes = st.sidebar.slider("Holographie: Primzahl Tiefe", 50, 500, 200)
-freq_max = st.sidebar.slider("Holographie: Frequenzbereich", 10, 100, 40)
-
+with st.sidebar.expander("3. Holographie (High Res)"):
+    num_primes = st.slider("Primzahl Tiefe", 100, 5000, 1000)
+    freq_max = st.slider("Frequenzbereich", 10, 200, 60)
 
 # --- MAIN TABS ---
 tab1, tab2, tab3, tab4 = st.tabs(["1. Geometrie", "2. Sättigung", "3. Entropie", "4. Holometer"])
@@ -223,205 +236,136 @@ tab1, tab2, tab3, tab4 = st.tabs(["1. Geometrie", "2. Sättigung", "3. Entropie"
 with tab1:
     st.header("Emergent Geometry (Axiom I)")
     
-    if st.button("🔄 Netzwerk neu generieren"): st.cache_data.clear()
+    # Session State Logic to prevent redraw loop
+    if 'graph_data' not in st.session_state:
+        st.session_state.graph_data = None
+
+    col_btn, col_info = st.columns([1, 4])
+    with col_btn:
+        if st.button("🔄 Generieren", use_container_width=True) or st.session_state.graph_data is None:
+            st.session_state.graph_data = simulate_universe_structure(steps_geo, p_fork, p_link)
     
-    G = simulate_universe_structure(7, p_fork, p_link)
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        fig, ax = plt.subplots(figsize=(10, 6))
-        pos = nx.spring_layout(G, seed=42, iterations=50)
-        degrees = [val for (node, val) in G.degree()]
-        nx.draw_networkx_nodes(G, pos, node_size=50, node_color=degrees, cmap=plt.cm.plasma, ax=ax)
-        nx.draw_networkx_edges(G, pos, alpha=0.3, edge_color='#444444', ax=ax)
-        ax.axis('off')
-        fig.patch.set_facecolor('#0E1117')
-        st.pyplot(fig)
-    with col2:
-        st.info(f"**Netzwerk-Metrik:**\n\nKnoten: {G.number_of_nodes()}\nKanten: {G.number_of_edges()}")
+    G = st.session_state.graph_data
+    
+    with col_info:
+        st.caption(f"Knoten: {G.number_of_nodes()} | Kanten: {G.number_of_edges()}")
+
+    # Visualisierung
+    # Matplotlib ist hier immer noch besser für reine Netzwerke ohne WebGL-Overhead
+    fig, ax = plt.subplots(figsize=(10, 5))
+    pos = nx.spring_layout(G, seed=42, iterations=35) # Iterations reduziert für Speed
+    
+    # Color by Layer
+    colors = [G.nodes[n]['layer'] for n in G.nodes()]
+    
+    nx.draw_networkx_nodes(G, pos, node_size=60, node_color=colors, cmap=plt.cm.cool, ax=ax)
+    nx.draw_networkx_edges(G, pos, alpha=0.2, edge_color='#aaaaaa', ax=ax)
+    ax.axis('off')
+    fig.patch.set_facecolor('#0E1117')
+    st.pyplot(fig)
 
 # TAB 2: SÄTTIGUNG
 with tab2:
     st.header("Regime Stability (Odd vs Even)")
     
-    # 1. Interactive Checker
     col_input, col_viz = st.columns([1, 3])
     with col_input:
-        n_check = st.number_input("Dimension N prüfen", min_value=3, max_value=20, value=7, step=1)
-        evals, tension, has_zero = get_spectral_properties(n_check)
+        n_check = st.number_input("Dimension N prüfen", 3, 50, 7)
+        evals, _, has_zero = get_spectral_properties(n_check)
 
         if has_zero:
-            st.warning(f"⚠️ **Flux-Tunnel (N={n_check})**\n- Zero Mode: Ja\n- Instabil")
+            st.error(f"⚠️ **Flux-Tunnel (N={n_check})**\n\nInstabil (Zero Mode)")
         else:
-            st.success(f"✅ **Stabile Metrik (N={n_check})**\n- Zero Mode: Nein\n- Stabil")
+            st.success(f"✅ **Stabile Metrik (N={n_check})**\n\nStabil (Hermitesch)")
             
     with col_viz:
-        fig2, ax2 = plt.subplots(figsize=(8, 3))
-        indices = range(1, len(evals) + 1)
-        bar_color = '#ff4b4b' if has_zero else '#00ccff'
-        ax2.bar(indices, evals, color=bar_color, alpha=0.7)
-        ax2.axhline(2.0, color='white', linestyle='--', alpha=0.3, label='Limit (2.0)')
-        ax2.set_ylabel("Tension |λ|")
-        ax2.set_facecolor('#0E1117'); fig2.patch.set_facecolor('#0E1117')
-        ax2.tick_params(colors='white'); ax2.yaxis.label.set_color('white')
-        st.pyplot(fig2)
+        # Plotly Bar Chart
+        fig_bar = go.Figure(data=[go.Bar(
+            y=evals, 
+            marker_color='#ff4b4b' if has_zero else '#00ccff',
+            opacity=0.8
+        )])
+        fig_bar.update_layout(
+            title="Spectral Tension Distribution",
+            yaxis_title="Eigenwert Magnitude |λ|",
+            template="plotly_dark",
+            height=250,
+            margin=dict(l=20, r=20, t=30, b=20)
+        )
+        st.plotly_chart(fig_bar, use_container_width=True)
 
-    st.markdown("---")
-    st.subheader("Global Saturation Curve")
+    st.divider()
     
-    # 2. Global Curve
-    dims, lambdas, is_real_data = get_saturation_data(sat_file, max_dim_view)
-    
-    fig3, ax3 = plt.subplots(figsize=(10, 4))
-    ax3.plot(dims, lambdas, 'o-', color='#00ccff', linewidth=2, label='Gemessene Spannung')
-    ax3.axhline(2.0, color='#ff0055', linestyle='--', label='Limit (2.0)')
-    
-    ax3.set_xlabel("Dimension N", color='white')
-    ax3.set_ylabel("Spannung |λ|", color='white')
-    ax3.tick_params(colors='white'); ax3.xaxis.label.set_color('white'); ax3.yaxis.label.set_color('white')
-    ax3.legend(facecolor='#262730', edgecolor='white')
-    ax3.grid(True, alpha=0.1)
-    ax3.set_facecolor('#0E1117'); fig3.patch.set_facecolor('#0E1117')
-    
-    st.pyplot(fig3)
-    
-    st.markdown(r"""
-    $$
-    H_{k, k+1} = i, \quad H_{k+1, k} = -i \implies \lambda_{max} = \max |\text{eig}(H)|
-    $$
-    Dies testet die ontologische Stabilität des Raumes bis $N \to \infty$.
-    """)
+    # Global Curve
+    dims, lambdas = get_saturation_data(max_dim_view)
+    fig_sat = plot_line_chart(dims, lambdas, "Global Saturation Curve (Limit -> 2.0)", "Dimension N", "Spannung |λ|")
+    fig_sat.add_hline(y=2.0, line_dash="dash", line_color="red", annotation_text="Limit")
+    st.plotly_chart(fig_sat, use_container_width=True)
 
 # TAB 3: ENTROPIE
 with tab3:
     st.header("Axiom IV: Entropic Damping Dynamics")
-    st.markdown("Vergleich von globaler (kosmologischer) vs. lokaler (Hawking) Dämpfung.")
     
-    # Run both simulations for comparison
-    t, norms_const, _ = simulate_flux_tunnel_dynamics(sim_dim, 'Constant', base_rate_input)
-    _, norms_eigen, evals_flux = simulate_flux_tunnel_dynamics(sim_dim, 'Eigen-Dependent', base_rate_input)
+    t, norms_const = simulate_flux_tunnel_dynamics(sim_dim, 'Constant', base_rate_input)
+    _, norms_eigen = simulate_flux_tunnel_dynamics(sim_dim, 'Eigen-Dependent', base_rate_input)
     
-    fig4, ax4 = plt.subplots(figsize=(10, 5))
+    fig_ent = go.Figure()
+    fig_ent.add_trace(go.Scatter(x=t, y=norms_const, name='Constant Damping (Naive)', line=dict(dash='dot', color='gray')))
+    fig_ent.add_trace(go.Scatter(x=t, y=norms_eigen, name='Eigen-Dependent (Hawking)', line=dict(color='#ff4b4b', width=3)))
     
-    # Plotting the decay curves
-    ax4.plot(t, norms_const, '--', color='#aaaaaa', label=f'Constant Damping')
-    ax4.plot(t, norms_eigen, '^-', color='#ff4b4b', linewidth=2, label=f'Eigen-Dependent (Hawking)')
+    fig_ent.update_layout(
+        title=f"Information Loss in Flux Tunnel (Dim={sim_dim})",
+        xaxis_title="Time (t)",
+        yaxis_title="Information Norm ||ψ||",
+        template="plotly_dark",
+        height=450
+    )
+    st.plotly_chart(fig_ent, use_container_width=True)
     
-    ax4.set_xlabel("Time (t) [dt=0.1]")
-    ax4.set_ylabel("Information Norm ||ψ||")
-    ax4.legend(facecolor='#262730', edgecolor='white')
-    ax4.grid(True, alpha=0.1)
-    ax4.set_facecolor('#0E1117'); fig4.patch.set_facecolor('#0E1117')
-    ax4.tick_params(colors='white'); ax4.xaxis.label.set_color('white'); ax4.yaxis.label.set_color('white')
-    
-    st.pyplot(fig4)
-    
-    loss_const = (1 - norms_const[-1]) * 100
     loss_eigen = (1 - norms_eigen[-1]) * 100
-    st.caption(f"**Info-Verlust nach t=3.0:** Constant: {loss_const:.2f}% | Eigen-Dep: {loss_eigen:.2f}%")
+    st.metric("Information Loss (t=end)", f"{loss_eigen:.2f}%", delta="-Entropy")
 
 # TAB 4: HOLOMETER
 with tab4:
     st.header("Vacuum Holography (Riemann-Zeta Refined)")
+    st.markdown("Verwendet **vektorisierte Guinand-Weil-Transformation** für High-Performance Rausch-Synthese.")
     
-    col_desc, col_img = st.columns([3, 1])
-    with col_desc:
-        st.markdown("""
-        Diese Simulation nutzt die **Guinand-Weil-Formel**, um Vakuum-Rauschen zu synthetisieren.
-        Die Spitzen im Spektrum korrespondieren mathematisch exakt mit den **Nullstellen der Riemann-Zeta-Funktion**.
-        
-        *Der Export ermöglicht die Analyse der "Spectral Rigidity" in externen Tools.*
-        """)
-    with col_img:
-        st.write("🌌")
+    # Optimized Calculation
+    freqs, psd = get_vacuum_spectrum_optimized(num_primes, freq_max)
     
-    # Increased slider range for the "High Fidelity" mode
-    col_control1, col_control2 = st.columns(2)
-    with col_control1:
-        num_primes = st.slider("Tiefe (Anzahl Primzahlen)", 100, 5000, 1000)
-    with col_control2:
-        freq_max = st.slider("Frequenzbereich (Planck-Skala)", 10, 200, 60)
+    # Log-Log Trend Calculation
+    valid_idx = np.where(psd > 1e-9)
+    z = np.polyfit(np.log(freqs[valid_idx]), np.log(psd[valid_idx]), 1)
+    p_func = np.poly1d(z)
+    trend_y = np.exp(p_func(np.log(freqs)))
     
-    # FIX: Hier wurde der korrekte Funktionsname eingesetzt
-    freqs, psd, is_real_data = get_vacuum_spectrum(noise_file, num_primes, freq_max)
+    # Plotly Log-Log Chart
+    fig_holo = go.Figure()
+    fig_holo.add_trace(go.Scatter(x=freqs, y=psd, name='Quantum Noise', line=dict(color='#ffaa00', width=1), fill='tozeroy'))
+    fig_holo.add_trace(go.Scatter(x=freqs, y=trend_y, name=f'Fractal Trend (α={z[0]:.2f})', line=dict(color='white', width=1, dash='dash')))
     
-    # Visualization
-    fig5, ax5 = plt.subplots(figsize=(10, 5))
-    
-    # Holographic "Interference" Style
-    ax5.plot(freqs, psd, color='#ffaa00', lw=0.8, alpha=0.8, label='Quantum Chaos (Simulated)')
-    ax5.fill_between(freqs, psd, color='#ffaa00', alpha=0.1)
+    fig_holo.update_layout(
+        title="Spectral Density S(f) [Log-Log]",
+        xaxis_type="log",
+        yaxis_type="log",
+        xaxis_title="Frequenz (Hz)",
+        yaxis_title="Power Spectral Density",
+        template="plotly_dark",
+        height=500
+    )
+    st.plotly_chart(fig_holo, use_container_width=True)
 
-    # Trend line (Fractal Dimension Analysis)
-    if not is_real_data:
-        # FIX: psd explizit in Numpy-Array umwandeln für mathematische Operationen
-        psd_arr = np.array(psd)
-        
-        # Jetzt funktioniert der Vergleich elementweise
-        valid_idx = np.where(psd_arr > 1e-9)
-        
-        if len(valid_idx[0]) > 0:
-            # WICHTIG: Auch hier psd_arr statt psd verwenden
-            z = np.polyfit(np.log(freqs[valid_idx]), np.log(psd_arr[valid_idx]), 1)
-            p = np.poly1d(z)
-            ax5.plot(freqs, np.exp(p(np.log(freqs))), "w--", alpha=0.5, label=f'Trend α={z[0]:.2f}')
-        
-    ax5.set_xlabel("Frequenz (log)", color='white')
-    ax5.set_ylabel("Spektrale Dichte S(f)", color='white')
-    ax5.set_yscale('log')
-    ax5.set_xscale('log')
-    ax5.legend(facecolor='#262730', edgecolor='white')
-    ax5.grid(True, alpha=0.1, which='both')
-    ax5.set_facecolor('#0E1117'); fig5.patch.set_facecolor('#0E1117')
-    ax5.tick_params(colors='white'); ax5.xaxis.label.set_color('white'); ax5.yaxis.label.set_color('white')
-    
-    st.pyplot(fig5)
-    
-    # --- METRICS & EXPORT ---
-    col_metrics, col_export = st.columns([2, 1])
-    
-    with col_metrics:
-        # Find the primary resonance (highest peak)
+    # Export Logic
+    col1, col2 = st.columns(2)
+    with col1:
         peak_idx = np.argmax(psd)
-        peak_freq = freqs[peak_idx]
-        st.info(f"**Dominante Resonanz:** {peak_freq:.4f} Hz (Mögliche Zeta-Nullstelle)")
-
-    with col_export:
-        # FIX 1: Umwandlung in NumPy Array, damit die Rechnung funktioniert
-        psd_arr = np.array(psd)
-
-        # Prepare Data for CSV
-        export_df = pd.DataFrame({
-            "Frequency_Holographic": freqs,
-            "Power_Spectral_Density": psd_arr,
-            "Log_Freq": np.log10(freqs + 1e-9),
-            "Log_PSD": np.log10(psd_arr + 1e-9)
-        })
-        
-        csv_data = export_df.to_csv(index=False).encode('utf-8')
-        
-        # FIX 2: 'key'-Parameter hinzugefügt, um den DuplicateElementId Fehler zu beheben
-        st.download_button(
-            label="💾 Spektraldaten exportieren (.csv)",
-            data=csv_data,
-            file_name=f"SDRIS_Vacuum_Spectrum_N{num_primes}.csv",
-            mime="text/csv",
-            key="download_vacuum_spectrum_btn_unique",  # WICHTIG: Eindeutiger Key
-            help="Exportiert Frequenz und PSD für externe Analyse (z.B. MATLAB)."
-        )
-                
-        csv_data = export_df.to_csv(index=False).encode('utf-8')
-        
-        st.download_button(
-            label="💾 Spektraldaten exportieren (.csv)",
-            data=csv_data,
-            file_name=f"SDRIS_Vacuum_Spectrum_N{num_primes}.csv",
-            mime="text/csv",
-            help="Exportiert Frequenz und PSD für externe Analyse (z.B. MATLAB)."
-        )
+        st.info(f"**Dominante Resonanz:** {freqs[peak_idx]:.4f} Hz")
     
-    if not is_real_data:
-        st.success(f"""
-        **Analyse:**
-        Das Muster zeigt keine reine Zufälligkeit, sondern **"Spectral Rigidity"** (GUE Statistics).
-        Dies ist das mathematische Merkmal eines holographischen Quantenvakuums.
-        """)
+    with col2:
+        export_df = pd.DataFrame({"Frequency": freqs, "PSD": psd})
+        st.download_button(
+            label="💾 Spektrum als CSV",
+            data=export_df.to_csv(index=False).encode('utf-8'),
+            file_name="sdris_vacuum_spectrum.csv",
+            mime="text/csv"
+        )
