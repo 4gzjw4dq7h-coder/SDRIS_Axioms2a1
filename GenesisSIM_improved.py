@@ -55,6 +55,13 @@ def plot_line_chart(x, y, title, xlabel, ylabel, color='#00ccff', trend_y=None):
     return fig
     
 # --- RECHENKERNE (Optimiert) ---
+@st.cache_data
+def simulate_universe_structure(steps, p_fork, p_link):
+    """Generiert das Raum-Zeit-Netzwerk."""
+    G = nx.Graph()
+    root = "0"
+    G.add_node(root, layer=0)
+    active_nodes = [root]
 
 @st.cache_data
 def simulate_universe_structure(steps, p_fork, p_link):
