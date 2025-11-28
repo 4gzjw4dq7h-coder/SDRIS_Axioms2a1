@@ -14,7 +14,7 @@ st.set_page_config(
 )
 
 # Custom Style for Scientific Look
-plt.style.use('dark_background')
+plt.style.use('grey_background')
 
 st.title("🌌 SDRIS Theory: Interactive Verification")
 st.markdown("""
