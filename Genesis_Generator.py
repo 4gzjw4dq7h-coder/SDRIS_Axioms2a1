@@ -386,14 +386,27 @@ with tab4:
         st.info(f"**Dominante Resonanz:** {peak_freq:.4f} Hz (Mögliche Zeta-Nullstelle)")
 
     with col_export:
+        # FIX: psd sicherheitshalber in ein NumPy-Array konvertieren
+        psd_arr = np.array(psd)
+
         # Prepare Data for CSV
         export_df = pd.DataFrame({
             "Frequency_Holographic": freqs,
-            "Power_Spectral_Density": psd,
+            "Power_Spectral_Density": psd_arr,
             "Log_Freq": np.log10(freqs + 1e-9),
-            "Log_PSD": np.log10(psd + 1e-9)
+            "Log_PSD": np.log10(psd_arr + 1e-9)  # Jetzt funktioniert die Addition (Array + Float)
         })
         
+        csv_data = export_df.to_csv(index=False).encode('utf-8')
+        
+        st.download_button(
+            label="💾 Spektraldaten exportieren (.csv)",
+            data=csv_data,
+            file_name=f"SDRIS_Vacuum_Spectrum_N{num_primes}.csv",
+            mime="text/csv",
+            help="Exportiert Frequenz und PSD für externe Analyse (z.B. MATLAB)."
+        )
+            
         csv_data = export_df.to_csv(index=False).encode('utf-8')
         
         st.download_button(
