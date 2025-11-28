@@ -54,7 +54,7 @@ def plot_line_chart(x, y, title, xlabel, ylabel, color='#00ccff', trend_y=None):
 
 @st.cache_data
 def simulate_universe_structure(steps, p_fork, p_link):
-    """Axiom I: Generiert das Raum-Zeit-Netzwerk."""
+    """Generiert das Raum-Zeit-Netzwerk."""
     G = nx.Graph()
     root = "0"
     G.add_node(root, layer=0)
@@ -84,7 +84,7 @@ def simulate_universe_structure(steps, p_fork, p_link):
 
 @st.cache_data
 def get_saturation_data(max_dim_view):
-    """Axiom II: Simulation der dimensionalen Sättigung."""
+    """Simulation der dimensionalen Sättigung."""
     dims = []
     lambdas = []
     limit = max(21, max_dim_view)
@@ -112,7 +112,7 @@ def get_saturation_data(max_dim_view):
 
 @st.cache_data
 def get_spectral_properties(n_dim):
-    """Axiom II Update: Check Stability."""
+    """Check Stability."""
     J = np.zeros((n_dim, n_dim), dtype=complex)
     idx = np.arange(n_dim - 1)
     J[idx, idx+1] = -1j
@@ -127,7 +127,7 @@ def get_spectral_properties(n_dim):
 
 @st.cache_data
 def simulate_flux_tunnel_dynamics(n_dim, damping_type, base_rate, steps=40):
-    """Axiom IV: Entropic Dynamics."""
+    """Entropic Dynamics."""
     # Setup Matrix J
     J = np.zeros((n_dim, n_dim), dtype=complex)
     idx = np.arange(n_dim - 1)
@@ -172,7 +172,7 @@ def simulate_flux_tunnel_dynamics(n_dim, damping_type, base_rate, steps=40):
 
 @st.cache_data
 def get_vacuum_spectrum_optimized(num_primes, f_max):
-    """Axiom III: Vektorisierte Berechnung (High Performance)."""
+    """Vektorisierte Berechnung (High Performance)."""
     # 1. Primzahlen generieren (Sieb des Eratosthenes)
     limit = int(num_primes * 15) # Schätzung für Obergrenze
     is_prime = np.ones(limit, dtype=bool)
