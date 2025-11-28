@@ -321,7 +321,7 @@ with tab3:
 
 # TAB 4: HOLOMETER
 with tab4:
-    st.header("Axiom III: Vacuum Holography (Riemann-Zeta Refined)")
+    st.header("Vacuum Holography (Riemann-Zeta Refined)")
     
     col_desc, col_img = st.columns([3, 1])
     with col_desc:
@@ -350,16 +350,21 @@ with tab4:
     # Holographic "Interference" Style
     ax5.plot(freqs, psd, color='#ffaa00', lw=0.8, alpha=0.8, label='Quantum Chaos (Simulated)')
     ax5.fill_between(freqs, psd, color='#ffaa00', alpha=0.1)
-    
+
     # Trend line (Fractal Dimension Analysis)
     if not is_real_data:
-        # Fit a curve to the peaks to see the 1/f^alpha trend
-        valid_idx = np.where(psd > 1e-9)
+        # FIX: psd explizit in Numpy-Array umwandeln für mathematische Operationen
+        psd_arr = np.array(psd)
+        
+        # Jetzt funktioniert der Vergleich elementweise
+        valid_idx = np.where(psd_arr > 1e-9)
+        
         if len(valid_idx[0]) > 0:
-            z = np.polyfit(np.log(freqs[valid_idx]), np.log(psd[valid_idx]), 1)
+            # WICHTIG: Auch hier psd_arr statt psd verwenden
+            z = np.polyfit(np.log(freqs[valid_idx]), np.log(psd_arr[valid_idx]), 1)
             p = np.poly1d(z)
             ax5.plot(freqs, np.exp(p(np.log(freqs))), "w--", alpha=0.5, label=f'Trend α={z[0]:.2f}')
-    
+        
     ax5.set_xlabel("Frequenz (log)", color='white')
     ax5.set_ylabel("Spektrale Dichte S(f)", color='white')
     ax5.set_yscale('log')
