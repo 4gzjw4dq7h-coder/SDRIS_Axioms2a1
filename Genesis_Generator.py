@@ -14,7 +14,7 @@ st.set_page_config(
 )
 
 # Custom Style for Scientific Look
-plt.style.use('grey_background')
+plt.style.use('ggplot')
 
 st.title("🌌 SDRIS Theory: Interactive Verification")
 st.markdown("""
