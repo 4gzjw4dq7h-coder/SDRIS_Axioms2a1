@@ -242,9 +242,11 @@ with tab1:
 
     col_btn, col_info = st.columns([1, 4])
     with col_btn:
-        if st.button("🔄 Generieren", use_container_width=True) or st.session_state.graph_data is None:
-            st.session_state.graph_data = simulate_universe_structure(steps_geo, p_fork, p_link)
-    
+            if st.button("🔄 Generieren", use_container_width=True):
+              st.session_state.graph_data = simulate_universe_structure(steps_geo, p_fork, p_link)
+            elif st.session_state.graph_data is None:
+    st.session_state.graph_data = simulate_universe_structure(steps_geo, p_fork, p_link)
+
     G = st.session_state.graph_data
     
     with col_info:
