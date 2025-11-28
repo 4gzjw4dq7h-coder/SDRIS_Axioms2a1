@@ -66,7 +66,7 @@ def simulate_universe_structure(steps, p_fork, p_link):
 @st.cache_data
 def simulate_universe_structure(steps, p_fork, p_link):
     """Generiert das Raum-Zeit-Netzwerk."""
-    G = nx.Graph()
+    G = nx.Graph()
     root = "0"
     G.add_node(root, layer=0)
     active_nodes = [root]
