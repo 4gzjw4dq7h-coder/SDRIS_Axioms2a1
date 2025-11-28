@@ -19,14 +19,14 @@ plt.style.use('dark_background')
 st.title("🌌 SDRIS Theory: Interactive Verification")
 st.markdown("""
 **Static-Dynamic Recursive Information Space**
-Dieses Dashboard visualisiert die vier Säulen der Theorie. Nutzen Sie die Sidebar, um Parameter zu variieren.
+This dashboard visualizes the four pillars of the theory. Use the sidebar to adjust the parameters.
 """)
 
 # --- RECHENKERNE (Simulation & Logic) ---
 
 @st.cache_data
 def simulate_universe_structure(steps, p_fork, p_link):
-    """Generiert das Raum-Zeit-Netzwerk."""
+    """Generates the space-time network."""
     G = nx.Graph()
     root = "0"
     G.add_node(root, active=True, layer=0)
@@ -55,13 +55,13 @@ def simulate_universe_structure(steps, p_fork, p_link):
 
 @st.cache_data
 def get_saturation_data(uploaded_file, max_dim_view):
-    """Lädt CSV oder simuliert Sättigung für Axiom II."""
+    """Upload CSV data (saturation); otherwise simulation data will be used."""
     if uploaded_file is not None:
         try:
             df = pd.read_csv(uploaded_file)
             return df['Dimension_N'].values, df['Ontological_Tension_Lambda'].values, True
         except:
-            st.error("Fehler beim Lesen der Sättigungs-CSV.")
+            st.error("Upload error: CSV file (holographic noise).")
             
     # Fallback: Simulation
     dims = []
@@ -159,13 +159,13 @@ def simulate_flux_tunnel_dynamics(n_dim, damping_type, base_rate, steps=30):
 
 @st.cache_data
 def get_vacuum_spectrum(uploaded_file, num_primes, f_max):
-    """Axiom III: Lädt CSV oder simuliert holographisches Rauschen."""
+    """Upload CSV data (holographic noise); otherwise simulation data will be used."""
     if uploaded_file is not None:
         try:
             df = pd.read_csv(uploaded_file)
             return df['Frequency_Holographic'].values, df['Power_Spectral_Density'].values, True
         except:
-            st.error("Fehler beim Lesen der Noise-CSV.")
+            st.error("Upload error: CSV file (holographic noise).")
 
     # Fallback: Simulation using Primes
     limit = int(num_primes * 15)
@@ -193,37 +193,37 @@ def get_vacuum_spectrum(uploaded_file, num_primes, f_max):
 st.sidebar.header("🎛️ Steuerung & Daten")
 
 # File Uploader
-st.sidebar.subheader("📂 Daten Upload (Optional)")
-sat_file = st.sidebar.file_uploader("Sättigungs-Daten (.csv)", type="csv")
-noise_file = st.sidebar.file_uploader("Vakuum-Spektrum (.csv)", type="csv")
+st.sidebar.subheader("📂 Data upload (optional)")
+sat_file = st.sidebar.file_uploader("Saturation data (.csv)", type="csv")
+noise_file = st.sidebar.file_uploader("Vakuum spectrum (.csv)", type="csv")
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("Simulation Parameter")
+st.sidebar.subheader("Simulation parameters")
 
 # 1. Geometry
-p_fork = st.sidebar.slider("Geometrie: Zeit-Expansion", 0.5, 1.0, 0.90)
-p_link = st.sidebar.slider("Geometrie: Raum-Dichte", 0.01, 0.5, 0.15)
+p_fork = st.sidebar.slider("Geometry: time expansion", 0.5, 1.0, 0.90)
+p_link = st.sidebar.slider("Geometry: space depth", 0.01, 0.5, 0.15)
 
 # 2. Saturation
-max_dim_view = st.sidebar.slider("Sättigung: Max Dimension", 21, 60, 30)
+max_dim_view = st.sidebar.slider("Saturation: max dimension", 21, 60, 30)
 
 # 3. Entropy
-sim_dim = st.sidebar.selectbox("Entropie: Flux Tunnel Größe", [5, 7, 13, 17, 19, 21], index=1)
-base_rate_input = st.sidebar.slider("Entropie: Dämpfungs-Rate", 0.01, 0.5, 0.05)
+sim_dim = st.sidebar.selectbox("Entropy: flux tunnel size", [5, 7, 13, 17, 19, 21], index=1)
+base_rate_input = st.sidebar.slider("Entropy: damping rate", 0.01, 0.5, 0.05)
 
 # 4. Holometer
-num_primes = st.sidebar.slider("Holographie: Primzahl Tiefe", 50, 500, 200)
-freq_max = st.sidebar.slider("Holographie: Frequenzbereich", 10, 100, 40)
+num_primes = st.sidebar.slider("Holography: prime depth", 50, 500, 200)
+freq_max = st.sidebar.slider("Holography: frequency spectrum", 10, 100, 40)
 
 
 # --- MAIN TABS ---
-tab1, tab2, tab3, tab4 = st.tabs(["1. Geometrie", "2. Sättigung", "3. Entropie", "4. Holometer"])
+tab1, tab2, tab3, tab4 = st.tabs(["1. Geometry", "2. Saturation", "3. Entropy", "4. Holometer"])
 
 # TAB 1: GEOMETRIE
 with tab1:
-    st.header("Emergent Geometry (Axiom I)")
+    st.header("Emergent geometry")
     
-    if st.button("🔄 Netzwerk neu generieren"): st.cache_data.clear()
+    if st.button("🔄 Re-generate network"): st.cache_data.clear()
     
     G = simulate_universe_structure(7, p_fork, p_link)
     col1, col2 = st.columns([3, 1])
@@ -237,7 +237,7 @@ with tab1:
         fig.patch.set_facecolor('#0E1117')
         st.pyplot(fig)
     with col2:
-        st.info(f"**Netzwerk-Metrik:**\n\nKnoten: {G.number_of_nodes()}\nKanten: {G.number_of_edges()}")
+        st.info(f"**Network Metrik:**\n\nKnoten: {G.number_of_nodes()}\nKanten: {G.number_of_edges()}")
 
 # TAB 2: SÄTTIGUNG
 with tab2:
@@ -250,9 +250,9 @@ with tab2:
         evals, tension, has_zero = get_spectral_properties(n_check)
 
         if has_zero:
-            st.warning(f"⚠️ **Flux-Tunnel (N={n_check})**\n- Zero Mode: Ja\n- Instabil")
+            st.warning(f"⚠️ **Flux-tunnel (N={n_check})**\n- Zero Mode: Yes\n- unstable")
         else:
-            st.success(f"✅ **Stabile Metrik (N={n_check})**\n- Zero Mode: Nein\n- Stabil")
+            st.success(f"✅ **Stable metrik (N={n_check})**\n- Zero Mode: No\n- Stable")
             
     with col_viz:
         fig2, ax2 = plt.subplots(figsize=(8, 3))
@@ -288,13 +288,13 @@ with tab2:
     $$
     H_{k, k+1} = i, \quad H_{k+1, k} = -i \implies \lambda_{max} = \max |\text{eig}(H)|
     $$
-    Dies testet die ontologische Stabilität des Raumes bis $N \to \infty$.
+    This tests the ontological stability of space up to $N \to \infty$.
     """)
 
 # TAB 3: ENTROPIE
 with tab3:
     st.header("Entropic Damping Dynamics")
-    st.markdown("Vergleich von globaler (kosmologischer) vs. lokaler (Hawking) Dämpfung.")
+    st.markdown("Comparison of global (cosmological) vs. local (Hawking) damping.")
     
     # Run both simulations for comparison
     t, norms_const, _ = simulate_flux_tunnel_dynamics(sim_dim, 'Constant', base_rate_input)
@@ -326,10 +326,10 @@ with tab4:
     col_desc, col_img = st.columns([3, 1])
     with col_desc:
         st.markdown("""
-        Diese Simulation nutzt die **Guinand-Weil-Formel**, um Vakuum-Rauschen zu synthetisieren.
-        Die Spitzen im Spektrum korrespondieren mathematisch exakt mit den **Nullstellen der Riemann-Zeta-Funktion**.
+        This simulation uses **the Guinand–Weil formula** to synthesize vacuum noise.
+        The peaks in the spectrum correspond mathematically exactly to the **zeros of the Riemann zeta function**.
         
-        *Der Export ermöglicht die Analyse der "Spectral Rigidity" in externen Tools.*
+        *The export enables the analysis of “spectral rigidity” in external tools.*
         """)
     with col_img:
         st.write("🌌")
@@ -337,9 +337,9 @@ with tab4:
     # Increased slider range for the "High Fidelity" mode
     col_control1, col_control2 = st.columns(2)
     with col_control1:
-        num_primes = st.slider("Tiefe (Anzahl Primzahlen)", 100, 5000, 1000)
+        num_primes = st.slider("Tiefe (Number of primes)", 100, 5000, 1000)
     with col_control2:
-        freq_max = st.slider("Frequenzbereich (Planck-Skala)", 10, 200, 60)
+        freq_max = st.slider("Frequency range (Planck scale)", 10, 200, 60)
     
     # FIX: Hier wurde der korrekte Funktionsname eingesetzt
     freqs, psd, is_real_data = get_vacuum_spectrum(noise_file, num_primes, freq_max)
@@ -401,27 +401,27 @@ with tab4:
         
         # FIX 2: 'key'-Parameter hinzugefügt, um den DuplicateElementId Fehler zu beheben
         st.download_button(
-            label="💾 Spektraldaten exportieren (.csv)",
+            label="💾 Export Spectral Data (.csv)",
             data=csv_data,
             file_name=f"SDRIS_Vacuum_Spectrum_N{num_primes}.csv",
             mime="text/csv",
             key="download_vacuum_spectrum_btn_unique",  # WICHTIG: Eindeutiger Key
-            help="Exportiert Frequenz und PSD für externe Analyse (z.B. MATLAB)."
+            help="Exports frequency and PSD for external analysis (e.g., MATLAB)."
         )
                 
         csv_data = export_df.to_csv(index=False).encode('utf-8')
         
         st.download_button(
-            label="💾 Spektraldaten exportieren (.csv)",
+            label="💾 Export Spectral Data (.csv)",
             data=csv_data,
             file_name=f"SDRIS_Vacuum_Spectrum_N{num_primes}.csv",
             mime="text/csv",
-            help="Exportiert Frequenz und PSD für externe Analyse (z.B. MATLAB)."
+            help="Exports frequency and PSD for external analysis (e.g., MATLAB)."
         )
     
     if not is_real_data:
         st.success(f"""
-        **Analyse:**
-        Das Muster zeigt keine reine Zufälligkeit, sondern **"Spectral Rigidity"** (GUE Statistics).
-        Dies ist das mathematische Merkmal eines holographischen Quantenvakuums.
+        **Analysis:**
+        The pattern shows not pure randomness but **spectral rigidity** (GUE statistics).
+        This is the mathematical signature of a holographic quantum vacuum.
         """)
