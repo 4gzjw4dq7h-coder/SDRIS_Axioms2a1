@@ -26,7 +26,7 @@ Dieses Dashboard visualisiert die vier Säulen der Theorie. Nutzen Sie die Sideb
 
 @st.cache_data
 def simulate_universe_structure(steps, p_fork, p_link):
-    """Axiom I: Generiert das Raum-Zeit-Netzwerk."""
+    """Generiert das Raum-Zeit-Netzwerk."""
     G = nx.Graph()
     root = "0"
     G.add_node(root, active=True, layer=0)
@@ -85,7 +85,7 @@ def get_saturation_data(uploaded_file, max_dim_view):
 @st.cache_data
 def get_spectral_properties(n_dim):
     """
-    Axiom II Update: Calculates exact properties for Odd (Flux) vs Even (Stable) regimes.
+    Update: Calculates exact properties for Odd (Flux) vs Even (Stable) regimes.
     """
     # Construct Tilt Matrix J
     J = np.zeros((n_dim, n_dim), dtype=complex)
@@ -293,7 +293,7 @@ with tab2:
 
 # TAB 3: ENTROPIE
 with tab3:
-    st.header("Axiom IV: Entropic Damping Dynamics")
+    st.header("Entropic Damping Dynamics")
     st.markdown("Vergleich von globaler (kosmologischer) vs. lokaler (Hawking) Dämpfung.")
     
     # Run both simulations for comparison
