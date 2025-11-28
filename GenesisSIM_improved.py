@@ -70,7 +70,7 @@ def simulate_universe_structure(steps, p_fork, p_link):
     root = "0"
     G.add_node(root, layer=0)
     active_nodes = [root]
-    
+
     for t in range(steps):
         new_nodes = []
         for node in active_nodes:
